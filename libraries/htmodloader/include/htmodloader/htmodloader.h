@@ -38,8 +38,8 @@
 // Mod loader version.
 // Version number is used for pre-processing statements handling version
 // compatibility.
-#define HTML_VERSION 10900
-#define HTML_VERSION_NAME "1.9.0"
+#define HTML_VERSION 11100
+#define HTML_VERSION_NAME "1.11.0"
 
 #define HTMLAPI __stdcall
 #ifndef HTMLAPIATTR
@@ -55,7 +55,7 @@ extern "C" {
 #endif
 
 // ----------------------------------------------------------------------------
-// [SECTION] HTML basic APIs and type declarations.
+// [SECTION] HTML/basic
 // ----------------------------------------------------------------------------
 
 // Whether the execution was successful or not.
@@ -214,6 +214,13 @@ typedef struct {
   LPVOID pImAllocatorUserData;
 } HTImGuiContexts;
 
+// Provides external font data.
+typedef struct {
+  HTImGuiContexts ctx;
+  LPVOID pFontRegular;
+  LPVOID pFontMonospace;
+} HTImGuiContextsEx;
+
 /**
  * Get ImGui global context for those mods which can't link ImGui from
  * htmodloader.lib.
@@ -226,6 +233,12 @@ typedef struct {
  */
 HTMLAPIATTR HTStatus HTMLAPI HTImGuiDispatch(
   HTImGuiContexts *context);
+
+/**
+ * Convert font data pointers from LPVOID to ImFont *
+ */
+HTMLAPIATTR HTStatus HTMLAPI HTImGuiDispatchEx(
+  HTImGuiContextsEx *context);
 
 typedef int HTOptionType;
 enum HTOptionType_ {
@@ -291,7 +304,7 @@ HTMLAPIATTR UINT32 HTMLAPI HTPathNormalize(
  */
 HTMLAPIATTR UINT32 HTMLAPI HTPathJoin(
   LPWSTR result,
-  LPCWSTR *paths,
+  const LPCWSTR *paths,
   UINT32 maxLen);
 
 /**
@@ -299,11 +312,11 @@ HTMLAPIATTR UINT32 HTMLAPI HTPathJoin(
  */
 HTMLAPIATTR UINT32 HTMLAPI HTPathResolve(
   LPWSTR result,
-  LPCWSTR *paths,
+  const LPCWSTR *paths,
   UINT32 maxLen);
 
 /**
- * Returns the relative path from `from` to `to` based on the current working
+ * Returns the relative path from `src` to `dest` based on the current working
  * directory. If from and to each resolve to the same path (after calling
  * `HTiPathResolve()` on each), a zero-length string is returned.
  * 
@@ -312,8 +325,8 @@ HTMLAPIATTR UINT32 HTMLAPI HTPathResolve(
  */
 HTMLAPIATTR UINT32 HTMLAPI HTPathRelative(
   LPWSTR result,
-  LPCWSTR path1,
-  LPCWSTR path2,
+  LPCWSTR src,
+  LPCWSTR dest,
   UINT32 maxLen);
 
 /**
@@ -324,7 +337,7 @@ HTMLAPIATTR UINT32 HTMLAPI HTPathIsAbsolute(
   LPCWSTR path);
 
 // ----------------------------------------------------------------------------
-// [SECTION] HTML assembly patch APIs.
+// [SECTION] HTML/assembly
 // ----------------------------------------------------------------------------
 
 // Enable or disable all hooks or patches created by the specified mod.
@@ -464,7 +477,7 @@ HTMLAPIATTR HTStatus HTMLAPI HTAsmPatchDisable(
   LPVOID target);
 
 // ----------------------------------------------------------------------------
-// [SECTION] HTML memory manager APIs.
+// [SECTION] HTML/memory
 // ----------------------------------------------------------------------------
 
 /**
@@ -491,7 +504,7 @@ HTMLAPIATTR HTStatus HTMLAPI HTMemFree(
   LPVOID pointer);
 
 // ----------------------------------------------------------------------------
-// [SECTION] HTML mod communication APIs.
+// [SECTION] HTML/communication
 // ----------------------------------------------------------------------------
 
 // Event callback.
@@ -565,7 +578,7 @@ HTMLAPIATTR HTStatus HTMLAPI HTCommEmitEvent(
   LPVOID data);
 
 // ----------------------------------------------------------------------------
-// [SECTION] HTML hotkey register APIs.
+// [SECTION] HTML/hotkey
 // ----------------------------------------------------------------------------
 
 // Modified from ImGui to keep compatibility.
@@ -818,7 +831,7 @@ HTMLAPIATTR HTStatus HTMLAPI HTHotkeyUnlisten(
   LPVOID reserved);
 
 // ----------------------------------------------------------------------------
-// [SECTION] HTML console text APIs.
+// [SECTION] HTML/console
 // ----------------------------------------------------------------------------
 
 /**
@@ -851,7 +864,7 @@ HTMLAPIATTR HTStatus HTMLAPI HTTellRawV(
   va_list v);
 
 // ----------------------------------------------------------------------------
-// [SECTION] HTML persistent data storage APIs.
+// [SECTION] HTML/data
 // ----------------------------------------------------------------------------
 
 /**
@@ -869,7 +882,7 @@ HTMLAPIATTR HTStatus HTMLAPI HTDataStore(
 /**
  * Get a stored value with given key.
  */
-HTMLAPIATTR char *HTMLAPI HTDataGet(
+HTMLAPIATTR LPSTR HTMLAPI HTDataGet(
   HMODULE hModule,
   LPCSTR key,
   UINT64 keyLen,
@@ -896,7 +909,51 @@ HTMLAPIATTR LPSTR HTMLAPI HTDataGetStringKey(
  * Free the pointer returned by HTDataGet().
  */
 HTMLAPIATTR VOID HTMLAPI HTDataFree(
-  char *value);
+  LPVOID value);
+
+// ----------------------------------------------------------------------------
+// [SECTION] HTML/assert
+// ----------------------------------------------------------------------------
+
+/**
+ * Create an assertion.
+ */
+#define HTAssert(expr) (void)(\
+  (!!(expr)) || (\
+    HTAssertImpl(#expr, __FILE__, __LINE__),\
+    __debugbreak(),\
+    0\
+  )\
+)
+
+/**
+ * Create an assertion with external message.
+ */
+#define HTAssertMsg(expr, msg, ...) (void)(\
+  (!!(expr)) || (\
+    HTAssertMsgImpl(#expr, __FILE__, __LINE__, msg, ## __VA_ARGS__),\
+    __debugbreak(),\
+    0\
+  )\
+)
+
+/**
+ * Create a messagebox with informations shown.
+ */
+HTMLAPIATTR VOID HTMLAPI HTAssertImpl(
+  LPCSTR expression,
+  LPCSTR file,
+  UINT32 line);
+
+/**
+ * Create a messagebox with informations shown.
+ */
+HTMLAPIATTR VOID HTMLAPI HTAssertMsgImpl(
+  LPCSTR expression,
+  LPCSTR file,
+  UINT32 line,
+  LPCSTR msg,
+  ...);
 
 #ifdef __cplusplus
 }
