@@ -21,6 +21,8 @@ When the mod initializes the game's Lua state, it registers `_G.sle = {}` with t
 
 * `sle.log(...)` / `sle.print(...)` - print to the REPL terminal while a REPL snippet is running, otherwise print to the HTModLoader console.
 
+The `scripts` folder is also appended to Lua's `package.path`, so `require()` can load modules from it: `require("foo")` loads `scripts/foo.lua`, `require("lib.util")` loads `scripts/lib/util.lua`, and `require("lib")` falls back to `scripts/lib/init.lua`. Modules provided by the game are searched first.
+
 The mod itself contains a independent Lua engine (v5.2.0, the same version with the one in-game), enable `Use local engine` to interpret scripts with it. Note that the local engine has some issues when using `print()` function which the game defined. Use `LuaLog` instead.
 
 The mod can be loaded on both Chinese and international editions. However, since the Chinese edition of the game requires administrator privileges, the external executable files also need to be started with administrator privileges.
