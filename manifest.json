@@ -5,7 +5,9 @@
   "mod_name": "SkyLuaEngine",
   "description": "Invokes lua engine in Sky.",
   "main": "sky-lua.dll",
-  "dependencies": {},
+  "dependencies": {
+    "htmodloader": ">=1.11.0"
+  },
   "keywords": [],
   "author": "rosemash",
   "license": "MIT",
