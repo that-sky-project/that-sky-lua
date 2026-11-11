@@ -24,9 +24,9 @@ CXX = g++
 CFLAGS = -Wall -Wformat -O3 -ffunction-sections -fdata-sections -static -flto=auto -s -Wno-unused-function -Wno-unused-variable
 CFLAGS += -I./src
 # Include ImGui.
-CFLAGS += -I./libraries/htmodloader/includes/imgui-1.92.2b -I./libraries/htmodloader/includes/imgui-1.92.2b/backends
+CFLAGS += -I./libraries/htmodloader/include/imgui-1.92.2b -I./libraries/htmodloader/include/imgui-1.92.2b/backends
 # Include HTML.
-CFLAGS += -I./libraries/htmodloader/includes/htmodloader
+CFLAGS += -I./libraries/htmodloader/include/
 # Include Lua.
 CFLAGS += -I./libraries/lua-5.2.0/src
 # Include TextEditor.

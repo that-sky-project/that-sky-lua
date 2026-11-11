@@ -2,13 +2,14 @@
 #define __SKYLUA_H__
 
 #include <windows.h>
-#include "includes/htmodloader.h"
-#include "lua.h"
+#include <htmodloader/htmodloader.h>
 #include "aliases.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#include "lua.h"
 
 #define LOGI(s, ...) HTTellText("[SkyLuaEngine][INFO] " s, ## __VA_ARGS__)
 #define LOGW(s, ...) HTTellText("[SkyLuaEngine][WARN] " s, ## __VA_ARGS__)

@@ -5,9 +5,9 @@
 #include <vector>
 #include <memory>
 
-#include "includes/htmodloader.h"
-#include "imgui.h"
-#include "TextEditor.h"
+#include <htmodloader/htmodloader.h>
+#include <imgui.h>
+#include <TextEditor.h>
 #include "aliases.h"
 #include "skylua.h"
 
@@ -16,6 +16,8 @@ i08 gUseLocalEngine = 0;
 static HTHandle hKeyMenuToggle
   , hKeyExecuteScript;
 static bool gShowMenu = false;
+static ImFont *gFontMono = nullptr;
+static ImFont *gFontRegular = nullptr;
 
 // ---------------------------------------------------------------------------
 // Editor tabs
@@ -109,6 +111,33 @@ static bool sameScriptPath(const std::string &a, const std::string &b) {
   return true;
 }
 
+static const ImTextEditor::Palette &createVSCodeDarkModernPalette() {
+  const static ImTextEditor::Palette p = { {
+    0xFFD4D4D4, // Default
+    0xFFB686C5, // Keyword  
+    0xFFA8CEB5, // Number
+    0xFF7891CE, // String
+    0xFF7891CE, // Char literal
+    0xFFD4D4D4, // Punctuation
+    0xFFB686C5, // Preprocessor
+    0xFFFEDC9C, // Identifier
+    0xFFFEDC9C, // Known identifier
+    0xFFFEDC9C, // Preproc identifier
+    0xFF55996A, // Comment (single line)
+    0xFF55996A, // Comment (multi line)
+    0xff101010, // Background
+    0xffe0e0e0, // Cursor
+    0xB0784F26, // Selection
+    0x800020ff, // ErrorMarker
+    0x800014E5, // Breakpoint
+    0xff707000, // Line number
+    0x40000000, // Current line fill
+    0x40808080, // Current line fill (inactive)
+    0x40a0a0a0, // Current line edge
+  } };
+  return p;
+}
+
 // Create an editor with the Sky-flavoured Lua language definition.
 static std::unique_ptr<ImTextEditor> createEditor(const char *text) {
   static const char *skyGameDefs[] = {
@@ -135,7 +164,7 @@ static std::unique_ptr<ImTextEditor> createEditor(const char *text) {
   editor->SetLanguageDefinition(lang);
 
   // Match the background of the host window.
-  ImTextEditor::Palette palette = ImTextEditor::GetDarkPalette();
+  ImTextEditor::Palette palette = createVSCodeDarkModernPalette();
   palette[(int)ImTextEditor::PaletteIndex::Background] =
     ImGui::GetColorU32(ImGuiCol_WindowBg);
   editor->SetPalette(palette);
@@ -454,8 +483,14 @@ static void renderEditorTabs() {
 
         ImGui::PushID(tab->id);
         ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarSize, 20.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_ScrollbarRounding, 0.0f);
+        if (gFontMono) ImGui::PushFont(gFontMono);
+
         tab->editor->Render("##editor", ImGui::GetContentRegionAvail());
-        ImGui::PopStyleVar();
+
+        if (gFontMono) ImGui::PopFont();
+        ImGui::PopStyleVar(3);
         ImGui::PopID();
 
         // Escape releases keyboard focus from the editor so that hotkeys and
@@ -601,6 +636,9 @@ static void renderReplPage() {
   if (outputHeight < 60.0f)
     outputHeight = 60.0f;
 
+  if (gFontMono) ImGui::PushFont(gFontMono);
+  ImGui::PushStyleColor(ImGuiCol_Text, 0xFFD4D4D4);
+
   ImGui::BeginChild(
     "##replOutput", ImVec2(0.0f, outputHeight), ImGuiChildFlags_Borders);
 
@@ -629,6 +667,9 @@ static void renderReplPage() {
         | ImGuiInputTextFlags_CallbackHistory,
       replInputCallback))
     submitRepl();
+
+  ImGui::PopStyleColor();
+  if (gFontMono) ImGui::PopFont();
 
   if (gReplKeepFocus) {
     gReplKeepFocus = false;
@@ -743,7 +784,18 @@ i32 sleInitGui() {
 }
 
 void sleRenderGui() {
+  static bool s_first = true;
   bool windowFocused;
+
+  if (s_first) {
+    // Get fonts from HTModLoader.
+    HTImGuiContextsEx ctx;
+    HTImGuiDispatchEx(&ctx);
+    gFontMono = (ImFont *)ctx.pFontMonospace;
+    gFontRegular = (ImFont *)ctx.pFontRegular;
+
+    s_first = false;
+  }
 
   if (!gShowMenu)
     return;
